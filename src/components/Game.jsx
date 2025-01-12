@@ -20,9 +20,17 @@ function Game() {
     const newSocket = io('http://localhost:3001')
     setSocket(newSocket)
 
-    newSocket.emit('join_game', {
-      roomId,
-      username: user.email // or user.username if you have it
+    newSocket.on('connect', () => {
+      console.log('Connected to server')
+      
+      newSocket.emit('join_game', {
+        roomId,
+        username: user.email
+      })
+    })
+
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error)
     })
 
     newSocket.on('player_joined', ({ playerCount: count }) => {
@@ -56,12 +64,24 @@ function Game() {
       setResults(sortedScores)
     })
 
-    return () => newSocket.disconnect()
+    return () => {
+      console.log('Disconnecting socket')
+      newSocket.disconnect()
+    }
   }, [roomId, user.email])
 
   const handleClick = async () => {
+    if (!socket?.connected) {
+      console.error('Socket not connected')
+      return
+    }
+
     if (gameState === 'waiting') {
-      socket.emit('start_game', { roomId })
+      try {
+        socket.emit('start_game', { roomId })
+      } catch (error) {
+        console.error('Error starting game:', error)
+      }
       return
     }
     

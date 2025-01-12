@@ -16,17 +16,23 @@ function Login() {
 
     try {
       if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
+        const { data: authData, error: authError } = await supabase.auth.signUp({
           email,
           password,
         })
 
-        if (error) throw error
+        if (authError) throw authError
 
         // Create profile after successful signup
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert([{ id: data.user.id, username }])
+          .insert([
+            { 
+              id: authData.user.id,
+              email: authData.user.email,
+              username: username || authData.user.email // Use username if provided, otherwise use email
+            }
+          ])
 
         if (profileError) throw profileError
 
@@ -38,7 +44,6 @@ function Login() {
         })
 
         if (error) throw error
-
         navigate('/')
       }
     } catch (error) {

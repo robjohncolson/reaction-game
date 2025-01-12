@@ -18,8 +18,13 @@ function Leaderboard() {
       const { data, error } = await supabase
         .from('scores')
         .select(`
+          id,
           reaction_time,
-          profiles (username, email)
+          user_id,
+          profiles!scores_user_id_fkey (
+            username,
+            email
+          )
         `)
         .order('reaction_time', { ascending: true })
         .limit(10)
@@ -52,7 +57,7 @@ function Leaderboard() {
       ) : (
         <div className="scores-list">
           {scores.map((score, index) => (
-            <div key={index} className="score-item">
+            <div key={score.id} className="score-item">
               <span className="rank">#{index + 1}</span>
               <span className="username">
                 {score.profiles?.username || score.profiles?.email || 'Anonymous'}

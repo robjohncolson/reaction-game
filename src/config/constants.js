@@ -1,3 +1,3 @@
 export const SOCKET_URL = process.env.NODE_ENV === 'production'
-  ? 'YOUR_RAILWAY_DEPLOYMENT_URL'  // Replace with the URL Railway gives you after deployment
+  ? 'https://reliable-mercy-production.up.railway.app:8080'  // Include the port number
   : 'http://localhost:3001' 

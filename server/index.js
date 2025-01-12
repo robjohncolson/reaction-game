@@ -12,6 +12,15 @@ app.use(cors({
     : "http://localhost:5173"
 }))
 
+// Add a basic health check route
+app.get('/', (req, res) => {
+  res.send('Server is running')
+})
+
+app.get('/health', (req, res) => {
+  res.send('OK')
+})
+
 const httpServer = createServer(app)
 const io = new Server(httpServer, {
   cors: {

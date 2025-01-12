@@ -55,6 +55,12 @@ class GameRoom {
 }
 
 io.on('connection', (socket) => {
+  console.log('New connection:', {
+    id: socket.id,
+    rooms: Array.from(socket.rooms),
+    headers: socket.handshake.headers
+  })
+
   console.log('User connected:', socket.id)
 
   socket.on('join_game', ({ roomId, username }) => {
@@ -109,21 +115,27 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id)
     
-    // Remove player from their room
-    rooms.forEach((room, roomId) => {
+    // Remove player from their room and clean up
+    for (const [roomId, room] of rooms.entries()) {
       if (room.players.has(socket.id)) {
         room.removePlayer(socket.id)
+        
+        // Notify remaining players
         io.to(roomId).emit('player_left', {
           playerId: socket.id,
           playerCount: room.players.size
         })
         
-        // Clean up empty rooms
+        // If room is empty, remove it
         if (room.players.size === 0) {
+          console.log('Removing empty room:', roomId)
           rooms.delete(roomId)
         }
+        
+        // Only need to remove from one room since a socket can only be in one room
+        break
       }
-    })
+    }
   })
 })
 

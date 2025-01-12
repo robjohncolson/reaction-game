@@ -17,56 +17,73 @@ function Game() {
   const { user } = useAuth()
 
   useEffect(() => {
-    const newSocket = io('http://localhost:3001')
-    setSocket(newSocket)
+    let mounted = true
+    let socketInstance = null
 
-    newSocket.on('connect', () => {
-      console.log('Connected to server')
-      
-      newSocket.emit('join_game', {
-        roomId,
-        username: user.email
+    const initSocket = () => {
+      if (socketInstance) return
+
+      socketInstance = io('http://localhost:3001', {
+        transports: ['websocket'],
+        reconnection: false
       })
-    })
 
-    newSocket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error)
-    })
+      socketInstance.on('connect', () => {
+        console.log('Connected with ID:', socketInstance.id)
+        
+        if (mounted) {
+          socketInstance.emit('join_game', {
+            roomId,
+            username: user.email
+          })
+        }
+      })
 
-    newSocket.on('player_joined', ({ playerCount: count }) => {
-      setPlayerCount(count)
-    })
+      socketInstance.on('connect_error', (error) => {
+        console.error('Socket connection error:', error)
+      })
 
-    newSocket.on('player_left', ({ playerCount: count }) => {
-      setPlayerCount(count)
-    })
+      socketInstance.on('player_joined', ({ playerCount: count }) => {
+        setPlayerCount(count)
+      })
 
-    newSocket.on('game_starting', () => {
-      setGameState('ready')
-      setBackgroundColor('red')
-      setReactionTime(null)
-      setResults(null)
-    })
+      socketInstance.on('player_left', ({ playerCount: count }) => {
+        setPlayerCount(count)
+      })
 
-    newSocket.on('turn_green', ({ timestamp }) => {
-      setBackgroundColor('green')
-      setStartTime(timestamp)
-      setGameState('started')
-    })
+      socketInstance.on('game_starting', () => {
+        setGameState('ready')
+        setBackgroundColor('red')
+        setReactionTime(null)
+        setResults(null)
+      })
 
-    newSocket.on('game_results', ({ scores }) => {
-      const sortedScores = scores
-        .sort((a, b) => a.score - b.score)
-        .map((score, index) => ({
-          ...score,
-          rank: index + 1
-        }))
-      setResults(sortedScores)
-    })
+      socketInstance.on('turn_green', ({ timestamp }) => {
+        setBackgroundColor('green')
+        setStartTime(timestamp)
+        setGameState('started')
+      })
+
+      socketInstance.on('game_results', ({ scores }) => {
+        const sortedScores = scores
+          .sort((a, b) => a.score - b.score)
+          .map((score, index) => ({
+            ...score,
+            rank: index + 1
+          }))
+        setResults(sortedScores)
+      })
+    }
+
+    initSocket()
 
     return () => {
-      console.log('Disconnecting socket')
-      newSocket.disconnect()
+      mounted = false
+      if (socketInstance) {
+        console.log('Cleaning up socket:', socketInstance.id)
+        socketInstance.disconnect()
+        socketInstance = null
+      }
     }
   }, [roomId, user.email])
 

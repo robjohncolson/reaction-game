@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 function Leaderboard() {
   const [scores, setScores] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -13,20 +14,23 @@ function Leaderboard() {
 
   const fetchScores = async () => {
     try {
+      console.log('Fetching scores...')
       const { data, error } = await supabase
         .from('scores')
         .select(`
           reaction_time,
-          profiles:user_id (username)
+          profiles (username, email)
         `)
         .order('reaction_time', { ascending: true })
         .limit(10)
 
       if (error) throw error
 
-      setScores(data)
+      console.log('Fetched scores:', data)
+      setScores(data || [])
     } catch (error) {
       console.error('Error fetching scores:', error)
+      setError(error.message)
     } finally {
       setLoading(false)
     }
@@ -41,12 +45,18 @@ function Leaderboard() {
       
       {loading ? (
         <p>Loading scores...</p>
+      ) : error ? (
+        <p className="error">Error: {error}</p>
+      ) : scores.length === 0 ? (
+        <p>No scores yet! Be the first to play!</p>
       ) : (
         <div className="scores-list">
           {scores.map((score, index) => (
             <div key={index} className="score-item">
               <span className="rank">#{index + 1}</span>
-              <span className="username">{score.profiles.username}</span>
+              <span className="username">
+                {score.profiles?.username || score.profiles?.email || 'Anonymous'}
+              </span>
               <span className="time">{score.reaction_time}ms</span>
             </div>
           ))}

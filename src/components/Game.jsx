@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../config/supabase'
-import { useAuth } from '../context/AuthContext'
+import { usePlayer } from '../context/PlayerContext'
 import io from 'socket.io-client'
+import { SOCKET_URL } from '../config/constants'
 
 function Game() {
   const [gameState, setGameState] = useState('waiting') // waiting, ready, started
@@ -14,7 +15,7 @@ function Game() {
   const [socket, setSocket] = useState(null)
   const [roomId, setRoomId] = useState('default-room') // You might want to make this dynamic
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { player } = usePlayer()
 
   useEffect(() => {
     let mounted = true
@@ -23,7 +24,7 @@ function Game() {
     const initSocket = () => {
       if (socketInstance) return
 
-      socketInstance = io('http://localhost:3001', {
+      socketInstance = io(SOCKET_URL, {
         transports: ['websocket'],
         reconnection: false
       })
@@ -36,7 +37,7 @@ function Game() {
           
           socketInstance.emit('join_game', {
             roomId,
-            username: user.email
+            username: player.username
           })
         }
       })
@@ -88,7 +89,7 @@ function Game() {
         setSocket(null)
       }
     }
-  }, [roomId, user.email])
+  }, [roomId, player.username])
 
   const handleClick = async () => {
     console.log('Click handled. Game state:', gameState, 'Socket connected:', socket?.connected)
@@ -133,7 +134,7 @@ function Game() {
         const { error } = await supabase
           .from('scores')
           .insert([{
-            user_id: user.id,
+            player_id: player.id,
             reaction_time: reaction
           }])
 

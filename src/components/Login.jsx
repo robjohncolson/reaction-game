@@ -3,10 +3,7 @@ import { supabase } from '../config/supabase'
 import { useNavigate } from 'react-router-dom'
 
 function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
-  const [isSignUp, setIsSignUp] = useState(false)
   const [error, setError] = useState(null)
   const navigate = useNavigate()
 
@@ -15,37 +12,31 @@ function Login() {
     setError(null)
 
     try {
-      if (isSignUp) {
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email,
-          password,
-        })
+      // Check if player exists or create new player
+      const { data: existingPlayer } = await supabase
+        .from('players')
+        .select('id, username')
+        .eq('username', username)
+        .single()
 
-        if (authError) throw authError
-
-        // Create profile after successful signup
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            { 
-              id: authData.user.id,
-              email: authData.user.email,
-              username: username || authData.user.email // Use username if provided, otherwise use email
-            }
-          ])
-
-        if (profileError) throw profileError
-
-        alert('Check your email for verification link!')
+      if (existingPlayer) {
+        // Store player info in localStorage
+        localStorage.setItem('player', JSON.stringify(existingPlayer))
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
+        // Create new player
+        const { data: newPlayer, error } = await supabase
+          .from('players')
+          .insert([{ username }])
+          .select()
+          .single()
 
         if (error) throw error
-        navigate('/')
+
+        // Store player info in localStorage
+        localStorage.setItem('player', JSON.stringify(newPlayer))
       }
+
+      navigate('/')
     } catch (error) {
       setError(error.message)
     }
@@ -54,45 +45,21 @@ function Login() {
   return (
     <div className="auth-container">
       <form onSubmit={handleSubmit} className="auth-form">
-        <h2>{isSignUp ? 'Sign Up' : 'Login'}</h2>
+        <h2>Enter Username to Play</h2>
         
-        {isSignUp && (
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        )}
-
         <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           required
-        />
-
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
+          minLength={2}
+          maxLength={20}
         />
 
         {error && <p className="error">{error}</p>}
 
-        <button type="submit">
-          {isSignUp ? 'Sign Up' : 'Login'}
-        </button>
-
-        <p onClick={() => setIsSignUp(!isSignUp)} className="toggle-auth">
-          {isSignUp 
-            ? 'Already have an account? Login' 
-            : "Don't have an account? Sign Up"}
-        </p>
+        <button type="submit">Start Playing</button>
       </form>
     </div>
   )

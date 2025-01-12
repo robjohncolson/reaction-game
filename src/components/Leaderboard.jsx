@@ -20,10 +20,8 @@ function Leaderboard() {
         .select(`
           id,
           reaction_time,
-          user_id,
-          profiles!scores_user_id_fkey (
-            username,
-            email
+          players!scores_player_id_fkey (
+            username
           )
         `)
         .order('reaction_time', { ascending: true })
@@ -60,7 +58,7 @@ function Leaderboard() {
             <div key={score.id} className="score-item">
               <span className="rank">#{index + 1}</span>
               <span className="username">
-                {score.profiles?.username || score.profiles?.email || 'Anonymous'}
+                {score.players?.username || 'Anonymous'}
               </span>
               <span className="time">{score.reaction_time}ms</span>
             </div>

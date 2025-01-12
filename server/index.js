@@ -4,7 +4,13 @@ const { Server } = require('socket.io')
 const cors = require('cors')
 
 const app = express()
-app.use(cors())
+app.use(cors({
+  // Allow connections from any origin in development
+  // In production, specify your Vercel app's URL
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL 
+    : "http://localhost:5173"
+}))
 
 const httpServer = createServer(app)
 const io = new Server(httpServer, {

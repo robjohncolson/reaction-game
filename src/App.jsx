@@ -1,15 +1,15 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './context/AuthContext'
-import { useAuth } from './context/AuthContext'
+import { PlayerProvider } from './context/PlayerContext'
+import { usePlayer } from './context/PlayerContext'
 import Game from './components/Game'
 import Leaderboard from './components/Leaderboard'
 import Login from './components/Login'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const { user } = useAuth()
+  const { player } = usePlayer()
   
-  if (!user) {
+  if (!player) {
     return <Navigate to="/login" />
   }
   
@@ -18,7 +18,7 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   return (
-    <AuthProvider>
+    <PlayerProvider>
       <Router>
         <div className="App">
           <Routes>
@@ -42,7 +42,7 @@ function App() {
           </Routes>
         </div>
       </Router>
-    </AuthProvider>
+    </PlayerProvider>
   )
 }
 

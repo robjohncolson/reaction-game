@@ -1,0 +1,13 @@
+reaction-game/
+├── src/
+│   ├── components/
+│   │   ├── Game.jsx
+│   │   ├── Leaderboard.jsx
+│   │   └── Login.jsx
+│   ├── config/
+│   │   └── supabase.js
+│   ├── App.jsx
+│   └── main.jsx
+├── server/
+│   └── index.js
+└── package.json 

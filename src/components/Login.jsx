@@ -12,32 +12,43 @@ function Login() {
     setError(null)
 
     try {
-      // Check if player exists or create new player
-      const { data: existingPlayer } = await supabase
+      console.log('Attempting to create/find player:', username)
+      
+      // Check if player exists
+      const { data: existingPlayer, error: selectError } = await supabase
         .from('players')
         .select('id, username')
         .eq('username', username)
         .single()
 
+      if (selectError && selectError.code !== 'PGRST116') {
+        console.error('Error checking existing player:', selectError)
+        throw selectError
+      }
+
       if (existingPlayer) {
-        // Store player info in localStorage
+        console.log('Found existing player:', existingPlayer)
         localStorage.setItem('player', JSON.stringify(existingPlayer))
       } else {
-        // Create new player
-        const { data: newPlayer, error } = await supabase
+        console.log('Creating new player')
+        const { data: newPlayer, error: insertError } = await supabase
           .from('players')
           .insert([{ username }])
           .select()
           .single()
 
-        if (error) throw error
+        if (insertError) {
+          console.error('Error creating player:', insertError)
+          throw insertError
+        }
 
-        // Store player info in localStorage
+        console.log('Created new player:', newPlayer)
         localStorage.setItem('player', JSON.stringify(newPlayer))
       }
 
       navigate('/')
     } catch (error) {
+      console.error('Login error:', error)
       setError(error.message)
     }
   }

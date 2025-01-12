@@ -9,29 +9,59 @@ function Game() {
   const [backgroundColor, setBackgroundColor] = useState('red')
   const [startTime, setStartTime] = useState(null)
   const [reactionTime, setReactionTime] = useState(null)
+  const [playerCount, setPlayerCount] = useState(1)
+  const [results, setResults] = useState(null)
+  const [socket, setSocket] = useState(null)
+  const [roomId, setRoomId] = useState('default-room') // You might want to make this dynamic
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  const startGame = useCallback(() => {
-    if (gameState !== 'waiting') return
-    
-    setGameState('ready')
-    setBackgroundColor('red')
-    setReactionTime(null)
-    
-    // Random delay between 1-10 seconds
-    const delay = Math.floor(Math.random() * 9000) + 1000
-    
-    setTimeout(() => {
+  useEffect(() => {
+    const newSocket = io('http://localhost:3001')
+    setSocket(newSocket)
+
+    newSocket.emit('join_game', {
+      roomId,
+      username: user.email // or user.username if you have it
+    })
+
+    newSocket.on('player_joined', ({ playerCount: count }) => {
+      setPlayerCount(count)
+    })
+
+    newSocket.on('player_left', ({ playerCount: count }) => {
+      setPlayerCount(count)
+    })
+
+    newSocket.on('game_starting', () => {
+      setGameState('ready')
+      setBackgroundColor('red')
+      setReactionTime(null)
+      setResults(null)
+    })
+
+    newSocket.on('turn_green', ({ timestamp }) => {
       setBackgroundColor('green')
-      setStartTime(Date.now())
+      setStartTime(timestamp)
       setGameState('started')
-    }, delay)
-  }, [gameState])
+    })
+
+    newSocket.on('game_results', ({ scores }) => {
+      const sortedScores = scores
+        .sort((a, b) => a.score - b.score)
+        .map((score, index) => ({
+          ...score,
+          rank: index + 1
+        }))
+      setResults(sortedScores)
+    })
+
+    return () => newSocket.disconnect()
+  }, [roomId, user.email])
 
   const handleClick = async () => {
     if (gameState === 'waiting') {
-      startGame()
+      socket.emit('start_game', { roomId })
       return
     }
     
@@ -49,16 +79,20 @@ function Game() {
       setGameState('waiting')
       setBackgroundColor('red')
 
+      // Submit score to room
+      socket.emit('submit_score', {
+        roomId,
+        score: reaction
+      })
+
       // Save score to Supabase
       try {
         const { error } = await supabase
           .from('scores')
-          .insert([
-            {
-              user_id: user.id,
-              reaction_time: reaction
-            }
-          ])
+          .insert([{
+            user_id: user.id,
+            reaction_time: reaction
+          }])
 
         if (error) throw error
       } catch (error) {
@@ -80,16 +114,33 @@ function Game() {
       }}
       onClick={handleClick}
     >
+      <div style={{ position: 'absolute', top: '20px', left: '20px', color: 'white' }}>
+        Players in room: {playerCount}
+      </div>
+
       <h1 style={{ color: 'white' }}>
         {gameState === 'waiting' && 'Click to start'}
         {gameState === 'ready' && 'Wait for green...'}
         {gameState === 'started' && 'Click!'}
       </h1>
+
       {reactionTime && (
         <h2 style={{ color: 'white' }}>
           Your reaction time: {reactionTime}ms
         </h2>
       )}
+
+      {results && (
+        <div style={{ color: 'white', marginTop: '20px' }}>
+          <h3>Results:</h3>
+          {results.map((result, index) => (
+            <div key={index}>
+              #{result.rank}: {result.score}ms
+            </div>
+          ))}
+        </div>
+      )}
+
       <button 
         onClick={(e) => {
           e.stopPropagation()

@@ -32,6 +32,8 @@ function Game() {
         console.log('Connected with ID:', socketInstance.id)
         
         if (mounted) {
+          setSocket(socketInstance)
+          
           socketInstance.emit('join_game', {
             roomId,
             username: user.email
@@ -83,11 +85,14 @@ function Game() {
         console.log('Cleaning up socket:', socketInstance.id)
         socketInstance.disconnect()
         socketInstance = null
+        setSocket(null)
       }
     }
   }, [roomId, user.email])
 
   const handleClick = async () => {
+    console.log('Click handled. Game state:', gameState, 'Socket connected:', socket?.connected)
+    
     if (!socket?.connected) {
       console.error('Socket not connected')
       return
@@ -95,6 +100,7 @@ function Game() {
 
     if (gameState === 'waiting') {
       try {
+        console.log('Emitting start_game event')
         socket.emit('start_game', { roomId })
       } catch (error) {
         console.error('Error starting game:', error)

@@ -82,15 +82,23 @@ io.on('connection', (socket) => {
   })
 
   socket.on('start_game', ({ roomId }) => {
+    console.log('Received start_game event for room:', roomId)
+    
     const room = rooms.get(roomId)
-    if (!room) return
+    if (!room) {
+      console.error('Room not found:', roomId)
+      return
+    }
 
+    console.log('Starting game in room:', roomId)
     room.state = 'ready'
     const delay = Math.floor(Math.random() * 9000) + 1000
+    console.log('Game will turn green in:', delay, 'ms')
 
     io.to(roomId).emit('game_starting')
     
     room.timer = setTimeout(() => {
+      console.log('Turning green in room:', roomId)
       room.state = 'started'
       io.to(roomId).emit('turn_green', {
         timestamp: Date.now()

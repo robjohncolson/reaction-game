@@ -1,3 +1,3 @@
 export const SOCKET_URL = process.env.NODE_ENV === 'production'
-  ? 'https://reaction-game-server-production.up.railway.app'  // Your Railway URL
+  ? 'YOUR_RAILWAY_DEPLOYMENT_URL'  // Replace with the URL Railway gives you after deployment
   : 'http://localhost:3001' 

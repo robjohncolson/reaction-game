@@ -163,4 +163,27 @@
 
 .current-user button:hover {
   background-color: #5a6268;
+}
+
+.all-time-records {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background-color: #2c3e50;
+  border-radius: 8px;
+}
+
+.hall-of-fame .score-item {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.hall-of-fame .rank-1 {
+  background-color: rgba(255, 215, 0, 0.2); /* Gold */
+}
+
+.hall-of-fame .rank-2 {
+  background-color: rgba(192, 192, 192, 0.2); /* Silver */
+}
+
+.hall-of-fame .rank-3 {
+  background-color: rgba(205, 127, 50, 0.2); /* Bronze */
 } 

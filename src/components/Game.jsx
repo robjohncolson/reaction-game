@@ -123,6 +123,35 @@ function Game() {
       })
 
       try {
+        // First, check if this is an all-time top 3 score
+        const { data: topScores } = await supabase
+          .from('all_time_records')
+          .select('reaction_time')
+          .order('reaction_time', { ascending: true })
+          .limit(3)
+
+        const isNewRecord = !topScores.length || 
+          reaction < Math.max(...topScores.map(s => s.reaction_time))
+
+        if (isNewRecord) {
+          await supabase
+            .from('all_time_records')
+            .insert([{
+              player_id: player.id,
+              reaction_time: reaction
+            }])
+            
+          // Optionally delete the lowest record if we have more than 3
+          if (topScores.length >= 3) {
+            await supabase
+              .from('all_time_records')
+              .delete()
+              .gt('reaction_time', Math.min(...topScores.map(s => s.reaction_time)))
+              .limit(1)
+          }
+        }
+
+        // Save to regular scores
         const { error } = await supabase
           .from('scores')
           .insert([{

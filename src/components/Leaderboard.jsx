@@ -5,19 +5,18 @@ import { usePlayer } from '../context/PlayerContext'
 
 function Leaderboard() {
   const [scores, setScores] = useState([])
+  const [allTimeRecords, setAllTimeRecords] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [newUsername, setNewUsername] = useState('')
-  const [isEditing, setIsEditing] = useState(false)
   const navigate = useNavigate()
-  const { player, updatePlayer } = usePlayer()
+  const { player } = usePlayer()
   
-  // Admin users - you might want to store this in your database
   const ADMIN_USERNAMES = ['admin', 'teacher', player?.username]
   const isAdmin = player && ADMIN_USERNAMES.includes(player.username)
 
   useEffect(() => {
     fetchScores()
+    fetchAllTimeRecords()
   }, [])
 
   const fetchScores = async () => {
@@ -39,22 +38,41 @@ function Leaderboard() {
     } catch (error) {
       console.error('Error fetching scores:', error)
       setError(error.message)
-    } finally {
-      setLoading(false)
+    }
+  }
+
+  const fetchAllTimeRecords = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('all_time_records')
+        .select(`
+          id,
+          reaction_time,
+          players!all_time_records_player_id_fkey (
+            username
+          )
+        `)
+        .order('reaction_time', { ascending: true })
+        .limit(3)
+
+      if (error) throw error
+      setAllTimeRecords(data || [])
+    } catch (error) {
+      console.error('Error fetching all-time records:', error)
     }
   }
 
   const handleClearLeaderboard = async () => {
     if (!isAdmin) return
     
-    const confirmed = window.confirm('Are you sure you want to clear the leaderboard? This cannot be undone.')
+    const confirmed = window.confirm('Are you sure you want to clear the current leaderboard? All-time records will be preserved.')
     if (!confirmed) return
 
     try {
       const { error } = await supabase
         .from('scores')
         .delete()
-        .not('id', 'is', null) // Deletes all records
+        .not('id', 'is', null)
 
       if (error) throw error
       
@@ -66,93 +84,60 @@ function Leaderboard() {
     }
   }
 
-  const handleUpdateUsername = async (e) => {
-    e.preventDefault()
-    if (!newUsername.trim() || newUsername === player.username) {
-      setIsEditing(false)
-      return
-    }
-
-    try {
-      const { error } = await updatePlayer(newUsername)
-      if (error) throw error
-      
-      setIsEditing(false)
-      // Refresh scores to show new username
-      fetchScores()
-    } catch (error) {
-      console.error('Error updating username:', error)
-      setError('Failed to update username')
-    }
-  }
-
   return (
     <div className="leaderboard-container">
-      <h1>Top 10 Reaction Times</h1>
-      
-      <div className="user-controls">
-        <button onClick={() => navigate('/')} className="back-button">
-          Back to Game
-        </button>
-        
-        {isAdmin && (
-          <button 
-            onClick={handleClearLeaderboard}
-            className="clear-button"
-          >
-            Clear Leaderboard
-          </button>
-        )}
-      </div>
-
-      {/* Username edit section */}
-      <div className="username-section">
-        {isEditing ? (
-          <form onSubmit={handleUpdateUsername} className="username-form">
-            <input
-              type="text"
-              value={newUsername}
-              onChange={(e) => setNewUsername(e.target.value)}
-              placeholder="New username"
-              minLength={2}
-              maxLength={20}
-              required
-            />
-            <button type="submit">Save</button>
-            <button type="button" onClick={() => setIsEditing(false)}>Cancel</button>
-          </form>
-        ) : (
-          <div className="current-user">
-            <span>Playing as: {player?.username}</span>
-            <button onClick={() => {
-              setNewUsername(player?.username || '')
-              setIsEditing(true)
-            }}>
-              Change Username
-            </button>
-          </div>
-        )}
-      </div>
-      
-      {error && <p className="error">{error}</p>}
-      
-      {loading ? (
-        <p>Loading scores...</p>
-      ) : scores.length === 0 ? (
-        <p>No scores yet! Be the first to play!</p>
-      ) : (
-        <div className="scores-list">
-          {scores.map((score, index) => (
-            <div key={score.id} className="score-item">
+      {/* All-Time Top 3 */}
+      <div className="all-time-records">
+        <h2>All-Time Best Reactions</h2>
+        <div className="scores-list hall-of-fame">
+          {allTimeRecords.map((record, index) => (
+            <div key={record.id} className={`score-item rank-${index + 1}`}>
               <span className="rank">#{index + 1}</span>
               <span className="username">
-                {score.players?.username || 'Anonymous'}
+                {record.players?.username || 'Anonymous'}
               </span>
-              <span className="time">{score.reaction_time}ms</span>
+              <span className="time">{record.reaction_time}ms</span>
             </div>
           ))}
         </div>
-      )}
+      </div>
+
+      {/* Current Top 10 */}
+      <div className="current-leaderboard">
+        <h2>Current Top 10</h2>
+        <div className="user-controls">
+          <button onClick={() => navigate('/')} className="back-button">
+            Back to Game
+          </button>
+          
+          {isAdmin && (
+            <button 
+              onClick={handleClearLeaderboard}
+              className="clear-button"
+            >
+              Clear Current Leaderboard
+            </button>
+          )}
+        </div>
+        
+        {loading ? (
+          <p>Loading scores...</p>
+        ) : scores.length === 0 ? (
+          <p>No scores yet! Be the first to play!</p>
+        ) : (
+          <div className="scores-list">
+            {scores.map((score, index) => (
+              <div key={score.id} className="score-item">
+                <span className="rank">#{index + 1}</span>
+                <span className="username">
+                  {score.players?.username || 'Anonymous'}
+                </span>
+                <span className="time">{score.reaction_time}ms</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

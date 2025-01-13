@@ -61,14 +61,10 @@ function Game() {
         setResults(null)
       })
 
-      socketInstance.on('turn_green', ({ timestamp: serverTimestamp }) => {
-        // Use Performance API for more precise timing
-        const clientTimestamp = performance.now()
-        const serverTimeOffset = clientTimestamp - serverTimestamp
-        console.log('Server-client time offset:', serverTimeOffset)
-        
+      socketInstance.on('turn_green', () => {
+        const startTime = Date.now()
         setBackgroundColor('green')
-        setStartTime(clientTimestamp)
+        setStartTime(startTime)
         setGameState('started')
       })
 
@@ -97,8 +93,7 @@ function Game() {
   }, [roomId, player.username])
 
   const handleClick = async () => {
-    // Use Performance API instead of Date.now()
-    const clickTime = performance.now()
+    const clickTime = Date.now()
     
     if (!socket?.connected) {
       console.error('Socket not connected')
@@ -123,7 +118,7 @@ function Game() {
     }
     
     if (gameState === 'started') {
-      const reaction = Math.round(clickTime - startTime)
+      const reaction = clickTime - startTime
       console.log({
         clickTime,
         startTime,
@@ -131,9 +126,8 @@ function Game() {
         device: /mobile/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop'
       })
 
-      // Add a reasonable minimum threshold (human reaction time is rarely below 100ms)
-      if (reaction < 100) {
-        console.warn('Suspiciously fast reaction time detected')
+      if (reaction < 100 || reaction > 5000) {
+        console.warn('Invalid reaction time:', reaction)
         return
       }
 
@@ -161,11 +155,13 @@ function Game() {
     }
   }
 
-  // Add touch event handlers
   const handleTouchStart = (e) => {
-    // Prevent double-firing on devices that send both touch and click events
     e.preventDefault()
-    handleClick()
+    if (gameState === 'started') {
+      handleClick()
+    } else if (gameState === 'waiting') {
+      handleClick()
+    }
   }
 
   return (

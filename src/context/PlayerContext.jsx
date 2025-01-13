@@ -8,7 +8,6 @@ export const PlayerProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check if player info exists in localStorage
     const storedPlayer = localStorage.getItem('player')
     if (storedPlayer) {
       setPlayer(JSON.parse(storedPlayer))
@@ -16,24 +15,20 @@ export const PlayerProvider = ({ children }) => {
     setLoading(false)
   }, [])
 
-  const updatePlayer = async (newUsername) => {
+  const updatePlayer = async (newPlayerData) => {
     try {
-      // Update player in Supabase
-      const { data, error } = await supabase
-        .from('players')
-        .update({ username: newUsername })
-        .eq('id', player.id)
-        .select()
-        .single()
+      // If newPlayerData is a string (username), convert to object
+      const playerData = typeof newPlayerData === 'string' 
+        ? { ...player, username: newPlayerData }
+        : newPlayerData
 
-      if (error) throw error
-
-      // Update local storage and state
-      const updatedPlayer = { ...player, username: newUsername }
-      localStorage.setItem('player', JSON.stringify(updatedPlayer))
-      setPlayer(updatedPlayer)
+      // Update state
+      setPlayer(playerData)
       
-      return { data, error: null }
+      // Update localStorage
+      localStorage.setItem('player', JSON.stringify(playerData))
+      
+      return { data: playerData, error: null }
     } catch (error) {
       console.error('Error updating player:', error)
       return { data: null, error }

@@ -8,7 +8,7 @@ function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const navigate = useNavigate()
-  const { updatePlayer } = usePlayer()
+  const { player, updatePlayer } = usePlayer()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -16,7 +16,6 @@ function Login() {
     setLoading(true)
 
     try {
-      // Validate username
       const trimmedUsername = username.trim()
       if (!trimmedUsername) {
         throw new Error('Username is required')
@@ -28,7 +27,7 @@ function Login() {
       console.log('Attempting to create/find player:', trimmedUsername)
 
       // Check if player exists
-      const { data: existingPlayer, error: selectError } = await supabase
+      let { data: existingPlayer, error: selectError } = await supabase
         .from('players')
         .select('*')
         .eq('username', trimmedUsername)
@@ -38,10 +37,8 @@ function Login() {
         throw selectError
       }
 
-      let player = existingPlayer
-
       // If player doesn't exist, create new one
-      if (!player) {
+      if (!existingPlayer) {
         const { data: newPlayer, error: insertError } = await supabase
           .from('players')
           .insert([{ username: trimmedUsername }])
@@ -49,18 +46,24 @@ function Login() {
           .single()
 
         if (insertError) throw insertError
-        player = newPlayer
+        existingPlayer = newPlayer
       }
 
-      // Update context and local storage
-      if (player) {
-        console.log('Successfully stored player in localStorage')
-        localStorage.setItem('player', JSON.stringify(player))
-        updatePlayer(player)
-        navigate('/')
-      } else {
+      if (!existingPlayer) {
         throw new Error('Failed to create/find player')
       }
+
+      // Store in localStorage first
+      localStorage.setItem('player', JSON.stringify(existingPlayer))
+      
+      // Update PlayerContext
+      await updatePlayer(existingPlayer)
+      
+      // Add a small delay to ensure state is updated
+      setTimeout(() => {
+        navigate('/', { replace: true })
+      }, 100)
+
     } catch (err) {
       console.error('Login error:', err)
       setError(err.message || 'Failed to log in')

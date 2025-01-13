@@ -18,6 +18,16 @@ function Game() {
   const { player } = usePlayer()
   const [gameTimeout, setGameTimeout] = useState(null)
 
+  const startNewGame = () => {
+    if (socket?.connected) {
+      // Clear any existing timeout
+      if (gameStartTimeout) {
+        clearTimeout(gameStartTimeout)
+      }
+      socket.emit('start_game', { roomId })
+    }
+  }
+
   useEffect(() => {
     let mounted = true
     let socketInstance = null
@@ -44,7 +54,7 @@ function Game() {
             username: player.username
           })
 
-          // Automatically start new game after 3 seconds
+          // Start first game automatically
           gameStartTimeout = setTimeout(() => {
             socketInstance.emit('start_game', { roomId })
           }, 3000)
@@ -89,11 +99,6 @@ function Game() {
           }))
         setResults(sortedScores)
         setGameState('waiting')
-
-        // Automatically start new game after showing results
-        gameStartTimeout = setTimeout(() => {
-          socketInstance.emit('start_game', { roomId })
-        }, 3000)
       })
     }
 
@@ -234,6 +239,26 @@ function Game() {
         {gameState === 'started' && 'Click!'}
       </h1>
 
+      {gameState === 'waiting' && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            startNewGame()
+          }}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            marginTop: '20px',
+            zIndex: 10
+          }}
+        >
+          Start Now
+        </button>
+      )}
+
       {reactionTime && (
         <h2 style={{ color: 'white', pointerEvents: 'none' }}>
           Your reaction time: {reactionTime}ms
@@ -263,12 +288,6 @@ function Game() {
       <button 
         onClick={(e) => {
           e.stopPropagation()
-          e.preventDefault()
-          navigate('/leaderboard')
-        }}
-        onTouchStart={(e) => {
-          e.stopPropagation()
-          e.preventDefault()
           navigate('/leaderboard')
         }}
         style={{
@@ -280,10 +299,7 @@ function Game() {
           border: 'none',
           borderRadius: '4px',
           cursor: 'pointer',
-          zIndex: 10,
-          touchAction: 'manipulation',
-          WebkitTapHighlightColor: 'transparent',
-          userSelect: 'none'
+          zIndex: 10
         }}
       >
         View Leaderboard

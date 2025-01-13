@@ -122,9 +122,8 @@ io.on('connection', (socket) => {
     room.timer = setTimeout(() => {
       console.log('Turning green in room:', roomId)
       room.state = 'started'
-      io.to(roomId).emit('turn_green', {
-        timestamp: Date.now()
-      })
+      const timestamp = performance.now()
+      io.to(roomId).emit('turn_green', { timestamp })
     }, delay)
   })
 

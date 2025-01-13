@@ -61,9 +61,14 @@ function Game() {
         setResults(null)
       })
 
-      socketInstance.on('turn_green', ({ timestamp }) => {
+      socketInstance.on('turn_green', ({ timestamp: serverTimestamp }) => {
+        // Use Performance API for more precise timing
+        const clientTimestamp = performance.now()
+        const serverTimeOffset = clientTimestamp - serverTimestamp
+        console.log('Server-client time offset:', serverTimeOffset)
+        
         setBackgroundColor('green')
-        setStartTime(timestamp)
+        setStartTime(clientTimestamp)
         setGameState('started')
       })
 
@@ -92,11 +97,8 @@ function Game() {
   }, [roomId, player.username])
 
   const handleClick = async () => {
-    // Add timing debug info
-    const clickTime = Date.now()
-    console.log('Click time:', clickTime)
-    console.log('Start time:', startTime)
-    console.log('Device type:', /mobile/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop')
+    // Use Performance API instead of Date.now()
+    const clickTime = performance.now()
     
     if (!socket?.connected) {
       console.error('Socket not connected')
@@ -121,20 +123,29 @@ function Game() {
     }
     
     if (gameState === 'started') {
-      const endTime = Date.now()
-      const reaction = endTime - startTime
-      console.log('Raw reaction time:', reaction)
+      const reaction = Math.round(clickTime - startTime)
+      console.log({
+        clickTime,
+        startTime,
+        reaction,
+        device: /mobile/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop'
+      })
+
+      // Add a reasonable minimum threshold (human reaction time is rarely below 100ms)
+      if (reaction < 100) {
+        console.warn('Suspiciously fast reaction time detected')
+        return
+      }
+
       setReactionTime(reaction)
       setGameState('waiting')
       setBackgroundColor('red')
 
-      // Submit score to room
       socket.emit('submit_score', {
         roomId,
         score: reaction
       })
 
-      // Save score to Supabase
       try {
         const { error } = await supabase
           .from('scores')
@@ -150,6 +161,13 @@ function Game() {
     }
   }
 
+  // Add touch event handlers
+  const handleTouchStart = (e) => {
+    // Prevent double-firing on devices that send both touch and click events
+    e.preventDefault()
+    handleClick()
+  }
+
   return (
     <div
       style={{
@@ -159,9 +177,16 @@ function Game() {
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        cursor: 'pointer'
+        cursor: 'pointer',
+        // Disable touch highlighting
+        WebkitTapHighlightColor: 'transparent',
+        // Prevent text selection
+        userSelect: 'none'
       }}
       onClick={handleClick}
+      onTouchStart={handleTouchStart}
+      // Prevent default touch behaviors
+      onTouchMove={(e) => e.preventDefault()}
     >
       <div style={{ position: 'absolute', top: '20px', left: '20px', color: 'white' }}>
         Players in room: {playerCount}

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { supabase } from '../config/supabase'
 
 const PlayerContext = createContext({})
 
@@ -15,8 +16,32 @@ export const PlayerProvider = ({ children }) => {
     setLoading(false)
   }, [])
 
+  const updatePlayer = async (newUsername) => {
+    try {
+      // Update player in Supabase
+      const { data, error } = await supabase
+        .from('players')
+        .update({ username: newUsername })
+        .eq('id', player.id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Update local storage and state
+      const updatedPlayer = { ...player, username: newUsername }
+      localStorage.setItem('player', JSON.stringify(updatedPlayer))
+      setPlayer(updatedPlayer)
+      
+      return { data, error: null }
+    } catch (error) {
+      console.error('Error updating player:', error)
+      return { data: null, error }
+    }
+  }
+
   return (
-    <PlayerContext.Provider value={{ player, loading }}>
+    <PlayerContext.Provider value={{ player, loading, updatePlayer }}>
       {!loading && children}
     </PlayerContext.Provider>
   )

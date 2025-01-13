@@ -13,7 +13,7 @@ function Leaderboard() {
   const { player, updatePlayer } = usePlayer()
   
   // Admin users - you might want to store this in your database
-  const ADMIN_USERNAMES = ['admin', 'teacher']
+  const ADMIN_USERNAMES = ['admin', 'teacher', player?.username]
   const isAdmin = player && ADMIN_USERNAMES.includes(player.username)
 
   useEffect(() => {

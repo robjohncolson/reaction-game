@@ -87,6 +87,20 @@ function Leaderboard() {
 
   return (
     <div className="leaderboard-container">
+      {/* QR Code Section - Now at top */}
+      <div className="qr-code-section" style={{ background: 'none', padding: 0, marginBottom: '2rem' }}>
+        <img 
+          src={qrCode} 
+          alt="QR Code to play game" 
+          style={{
+            width: '200px',
+            height: '200px',
+            margin: '0 auto',
+            display: 'block'
+          }}
+        />
+      </div>
+
       {/* All-Time Top 3 */}
       <div className="all-time-records">
         <h2>All-Time Best Reactions</h2>
@@ -138,22 +152,6 @@ function Leaderboard() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* QR Code Section */}
-      <div className="qr-code-section">
-        <h3>Play on Mobile!</h3>
-        <div className="qr-container">
-          <img 
-            src={qrCode} 
-            alt="QR Code to play game" 
-            style={{
-              width: '200px',
-              height: '200px',
-              margin: '20px auto'
-            }}
-          />
-        </div>
       </div>
     </div>
   )

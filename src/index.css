@@ -188,6 +188,8 @@
   background-color: rgba(205, 127, 50, 0.2); /* Bronze */
 }
 
+/* Remove or comment out these styles */
+/*
 .qr-code-section {
   margin-top: 2rem;
   padding: 1rem;
@@ -211,12 +213,12 @@
   margin: 0 auto;
 }
 
-/* Hide QR code on mobile devices */
 @media (max-width: 768px) {
   .qr-code-section {
     display: none;
   }
 }
+*/
 
 .auth-form input:disabled,
 .auth-form button:disabled {

@@ -27,7 +27,9 @@ function Game() {
 
       socketInstance = io(SOCKET_URL, {
         transports: ['websocket'],
-        reconnection: false
+        reconnection: true,
+        reconnectionAttempts: 3,
+        timeout: 10000
       })
 
       socketInstance.on('connect', () => {
@@ -45,6 +47,10 @@ function Game() {
 
       socketInstance.on('connect_error', (error) => {
         console.error('Socket connection error:', error)
+      })
+
+      socketInstance.on('disconnect', (reason) => {
+        console.log('Socket disconnected:', reason)
       })
 
       socketInstance.on('player_joined', ({ playerCount: count }) => {
@@ -95,8 +101,9 @@ function Game() {
     return () => {
       mounted = false
       if (socketInstance) {
-        console.log('Cleaning up socket:', socketInstance.id)
+        socketInstance.removeAllListeners()
         socketInstance.disconnect()
+        console.log('Cleaning up socket:', socketInstance.id)
         socketInstance = null
         setSocket(null)
       }

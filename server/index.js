@@ -35,14 +35,14 @@ const rooms = new Map()
 
 class GameRoom {
   constructor() {
-    this.players = new Set()
+    this.players = new Map()
     this.state = 'waiting' // waiting, ready, started
     this.scores = new Map()
     this.timer = null
   }
 
-  addPlayer(playerId) {
-    this.players.add(playerId)
+  addPlayer(playerId, username) {
+    this.players.set(playerId, { username })
   }
 
   removePlayer(playerId) {
@@ -51,13 +51,18 @@ class GameRoom {
   }
 
   setScore(playerId, score) {
-    this.scores.set(playerId, score)
+    const player = this.players.get(playerId)
+    this.scores.set(playerId, {
+      score,
+      username: player?.username
+    })
   }
 
   getScores() {
-    return Array.from(this.scores.entries()).map(([playerId, score]) => ({
+    return Array.from(this.scores.entries()).map(([playerId, data]) => ({
       playerId,
-      score
+      score: data.score,
+      username: data.username
     }))
   }
 
@@ -88,7 +93,7 @@ io.on('connection', (socket) => {
     }
     
     const room = rooms.get(roomId)
-    room.addPlayer(socket.id)
+    room.addPlayer(socket.id, username)
     
     // Notify room of new player
     io.to(roomId).emit('player_joined', {

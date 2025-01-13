@@ -92,7 +92,11 @@ function Game() {
   }, [roomId, player.username])
 
   const handleClick = async () => {
-    console.log('Click handled. Game state:', gameState, 'Socket connected:', socket?.connected)
+    // Add timing debug info
+    const clickTime = Date.now()
+    console.log('Click time:', clickTime)
+    console.log('Start time:', startTime)
+    console.log('Device type:', /mobile/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop')
     
     if (!socket?.connected) {
       console.error('Socket not connected')
@@ -119,6 +123,7 @@ function Game() {
     if (gameState === 'started') {
       const endTime = Date.now()
       const reaction = endTime - startTime
+      console.log('Raw reaction time:', reaction)
       setReactionTime(reaction)
       setGameState('waiting')
       setBackgroundColor('red')
@@ -178,8 +183,13 @@ function Game() {
         <div style={{ color: 'white', marginTop: '20px' }}>
           <h3>Results:</h3>
           {results.map((result, index) => (
-            <div key={index}>
-              #{result.rank}: {result.score}ms
+            <div key={index} style={{ 
+              padding: '8px',
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              margin: '4px 0',
+              borderRadius: '4px'
+            }}>
+              #{result.rank}: {result.username || 'Anonymous'} - {result.score}ms
             </div>
           ))}
         </div>

@@ -78,17 +78,6 @@ function Game() {
         setBackgroundColor('green')
         setStartTime(Date.now())
         setGameState('started')
-        
-        const timeout = setTimeout(() => {
-          if (gameState === 'started') {
-            console.log('Game timed out - no click detected')
-            setGameState('waiting')
-            setBackgroundColor('red')
-            setReactionTime(null)
-          }
-        }, 5000)
-        
-        setGameTimeout(timeout)
       })
 
       socketInstance.on('game_results', ({ scores }) => {
@@ -99,6 +88,7 @@ function Game() {
             rank: index + 1
           }))
         setResults(sortedScores)
+        setGameState('waiting')
 
         // Automatically start new game after showing results
         gameStartTimeout = setTimeout(() => {

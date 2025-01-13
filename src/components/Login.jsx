@@ -1,72 +1,71 @@
 import { useState } from 'react'
 import { supabase } from '../config/supabase'
 import { useNavigate } from 'react-router-dom'
+import { usePlayer } from '../context/PlayerContext'
 
 function Login() {
   const [username, setUsername] = useState('')
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const navigate = useNavigate()
+  const { updatePlayer } = usePlayer()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
+    setLoading(true)
 
     try {
-      console.log('Attempting to create/find player:', username)
-      
+      // Validate username
+      const trimmedUsername = username.trim()
+      if (!trimmedUsername) {
+        throw new Error('Username is required')
+      }
+      if (trimmedUsername.length < 2) {
+        throw new Error('Username must be at least 2 characters')
+      }
+
+      console.log('Attempting to create/find player:', trimmedUsername)
+
       // Check if player exists
       const { data: existingPlayer, error: selectError } = await supabase
         .from('players')
-        .select('id, username')
-        .eq('username', username)
+        .select('*')
+        .eq('username', trimmedUsername)
         .single()
 
-      console.log('Select response:', { existingPlayer, selectError })
-
       if (selectError && selectError.code !== 'PGRST116') {
-        console.error('Error checking existing player:', selectError)
         throw selectError
       }
 
-      if (existingPlayer) {
-        console.log('Found existing player:', existingPlayer)
-        try {
-          localStorage.setItem('player', JSON.stringify(existingPlayer))
-          console.log('Successfully stored player in localStorage')
-        } catch (storageError) {
-          console.error('localStorage error:', storageError)
-          throw new Error('Could not save player data: ' + storageError.message)
-        }
-      } else {
-        console.log('Creating new player')
+      let player = existingPlayer
+
+      // If player doesn't exist, create new one
+      if (!player) {
         const { data: newPlayer, error: insertError } = await supabase
           .from('players')
-          .insert([{ username }])
+          .insert([{ username: trimmedUsername }])
           .select()
           .single()
 
-        console.log('Insert response:', { newPlayer, insertError })
-
-        if (insertError) {
-          console.error('Error creating player:', insertError)
-          throw insertError
-        }
-
-        try {
-          localStorage.setItem('player', JSON.stringify(newPlayer))
-          console.log('Successfully stored new player in localStorage')
-        } catch (storageError) {
-          console.error('localStorage error:', storageError)
-          throw new Error('Could not save player data: ' + storageError.message)
-        }
+        if (insertError) throw insertError
+        player = newPlayer
       }
 
-      console.log('Attempting to navigate to /')
-      navigate('/')
-    } catch (error) {
-      console.error('Login error:', error)
-      // Show a more user-friendly error message
-      setError(error.message || 'Failed to log in. Please try again.')
+      // Update context and local storage
+      if (player) {
+        console.log('Successfully stored player in localStorage')
+        localStorage.setItem('player', JSON.stringify(player))
+        updatePlayer(player)
+        navigate('/')
+      } else {
+        throw new Error('Failed to create/find player')
+      }
+    } catch (err) {
+      console.error('Login error:', err)
+      setError(err.message || 'Failed to log in')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -75,36 +74,30 @@ function Login() {
       <form onSubmit={handleSubmit} className="auth-form">
         <h2>Enter Username to Play</h2>
         
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-          minLength={2}
-          maxLength={20}
-        />
-
         {error && (
-          <p className="error" style={{ 
-            color: 'red', 
-            padding: '10px', 
-            margin: '10px 0',
-            backgroundColor: 'rgba(255,0,0,0.1)',
-            borderRadius: '4px'
-          }}>
-            Error: {error}
-          </p>
+          <div className="error">{error}</div>
         )}
 
+        <input
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Enter username"
+          minLength={2}
+          maxLength={20}
+          disabled={loading}
+          required
+        />
+
         <button 
-          type="submit"
-          style={{
-            opacity: username.length < 2 ? 0.5 : 1
+          type="submit" 
+          disabled={loading}
+          style={{ 
+            opacity: loading ? 0.7 : 1,
+            cursor: loading ? 'not-allowed' : 'pointer'
           }}
-          disabled={username.length < 2}
         >
-          Start Playing
+          {loading ? 'Logging in...' : 'Start Playing'}
         </button>
       </form>
     </div>

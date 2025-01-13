@@ -62,9 +62,8 @@ function Game() {
       })
 
       socketInstance.on('turn_green', () => {
-        const startTime = Date.now()
         setBackgroundColor('green')
-        setStartTime(startTime)
+        setStartTime(Date.now())
         setGameState('started')
       })
 
@@ -93,32 +92,15 @@ function Game() {
   }, [roomId, player.username])
 
   const handleClick = async () => {
-    const clickTime = Date.now()
-    
     if (!socket?.connected) {
       console.error('Socket not connected')
       return
     }
 
-    if (gameState === 'waiting') {
-      try {
-        console.log('Emitting start_game event')
-        socket.emit('start_game', { roomId })
-      } catch (error) {
-        console.error('Error starting game:', error)
-      }
-      return
-    }
-    
-    if (gameState === 'ready') {
-      alert('Too early! Wait for green!')
-      setGameState('waiting')
-      setBackgroundColor('red')
-      return
-    }
-    
     if (gameState === 'started') {
+      const clickTime = Date.now()
       const reaction = clickTime - startTime
+
       console.log({
         clickTime,
         startTime,
@@ -126,7 +108,7 @@ function Game() {
         device: /mobile/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop'
       })
 
-      if (reaction < 100 || reaction > 5000) {
+      if (reaction < 100 || reaction > 2000) {
         console.warn('Invalid reaction time:', reaction)
         return
       }
@@ -152,6 +134,8 @@ function Game() {
       } catch (error) {
         console.error('Error saving score:', error)
       }
+    } else if (gameState === 'waiting') {
+      socket.emit('start_game', { roomId })
     }
   }
 

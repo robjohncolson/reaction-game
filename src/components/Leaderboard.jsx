@@ -145,7 +145,7 @@ function Leaderboard() {
             onMouseOver={(e) => e.currentTarget.style.opacity = '0.8'}
             onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
           >
-            v1.0.3
+            v1.0.4
           </a>
         </div>
       </div>

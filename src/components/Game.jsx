@@ -133,10 +133,15 @@ function Game() {
         device: /mobile/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop'
       })
 
-      if (reaction < 100 || reaction > 2000) {
+      if (reaction < 150 || reaction > 1000) {
         console.warn('Invalid reaction time:', reaction)
         setGameState('waiting')
         setBackgroundColor('red')
+        if (reaction < 150) {
+          alert('Too fast! Are you trying to cheat? 😉')
+        } else {
+          alert('Too slow! Try to click as soon as you see green.')
+        }
         return
       }
 
@@ -168,7 +173,6 @@ function Game() {
               reaction_time: reaction
             }])
             
-          // Optionally delete the lowest record if we have more than 3
           if (topScores.length >= 3) {
             await supabase
               .from('all_time_records')

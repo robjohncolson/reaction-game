@@ -16,6 +16,7 @@ function Game() {
   const [roomId, setRoomId] = useState('default-room') // You might want to make this dynamic
   const navigate = useNavigate()
   const { player } = usePlayer()
+  const [gameTimeout, setGameTimeout] = useState(null)
 
   useEffect(() => {
     let mounted = true
@@ -65,6 +66,17 @@ function Game() {
         setBackgroundColor('green')
         setStartTime(Date.now())
         setGameState('started')
+        
+        const timeout = setTimeout(() => {
+          if (gameState === 'started') {
+            console.log('Game timed out - no click detected')
+            setGameState('waiting')
+            setBackgroundColor('red')
+            setReactionTime(null)
+          }
+        }, 5000)
+        
+        setGameTimeout(timeout)
       })
 
       socketInstance.on('game_results', ({ scores }) => {
@@ -91,7 +103,20 @@ function Game() {
     }
   }, [roomId, player.username])
 
+  useEffect(() => {
+    return () => {
+      if (gameTimeout) {
+        clearTimeout(gameTimeout)
+      }
+    }
+  }, [gameTimeout])
+
   const handleClick = async () => {
+    if (gameTimeout) {
+      clearTimeout(gameTimeout)
+      setGameTimeout(null)
+    }
+
     if (!socket?.connected) {
       console.error('Socket not connected')
       return
@@ -110,6 +135,8 @@ function Game() {
 
       if (reaction < 100 || reaction > 2000) {
         console.warn('Invalid reaction time:', reaction)
+        setGameState('waiting')
+        setBackgroundColor('red')
         return
       }
 

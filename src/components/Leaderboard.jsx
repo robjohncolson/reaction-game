@@ -15,8 +15,8 @@ function Leaderboard() {
   const isAdmin = player && ADMIN_USERNAMES.includes(player.username)
 
   useEffect(() => {
-    fetchScores()
-    fetchAllTimeRecords()
+    Promise.all([fetchScores(), fetchAllTimeRecords()])
+      .finally(() => setLoading(false))
   }, [])
 
   const fetchScores = async () => {

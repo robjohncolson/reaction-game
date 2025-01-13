@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../config/supabase'
 import { useNavigate } from 'react-router-dom'
 import { usePlayer } from '../context/PlayerContext'
+import qrCode from '../assets/qr-code.png'
 
 function Leaderboard() {
   const [scores, setScores] = useState([])
@@ -137,6 +138,22 @@ function Leaderboard() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* QR Code Section */}
+      <div className="qr-code-section">
+        <h3>Play on Mobile!</h3>
+        <div className="qr-container">
+          <img 
+            src={qrCode} 
+            alt="QR Code to play game" 
+            style={{
+              width: '200px',
+              height: '200px',
+              margin: '20px auto'
+            }}
+          />
+        </div>
       </div>
     </div>
   )

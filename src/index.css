@@ -187,3 +187,33 @@
 .hall-of-fame .rank-3 {
   background-color: rgba(205, 127, 50, 0.2); /* Bronze */
 }
+
+.qr-code-section {
+  margin-top: 2rem;
+  padding: 1rem;
+  background-color: #2c3e50;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.qr-code-section h3 {
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.qr-container {
+  display: flex;
+  justify-content: center;
+  background-color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  max-width: 250px;
+  margin: 0 auto;
+}
+
+/* Hide QR code on mobile devices */
+@media (max-width: 768px) {
+  .qr-code-section {
+    display: none;
+  }
+}

@@ -208,6 +208,12 @@ function Game() {
       <button 
         onClick={(e) => {
           e.stopPropagation()
+          e.preventDefault()
+          navigate('/leaderboard')
+        }}
+        onTouchStart={(e) => {
+          e.stopPropagation()
+          e.preventDefault()
           navigate('/leaderboard')
         }}
         style={{
@@ -219,7 +225,10 @@ function Game() {
           border: 'none',
           borderRadius: '4px',
           cursor: 'pointer',
-          zIndex: 10 // Ensure button is above other elements
+          zIndex: 10,
+          touchAction: 'manipulation',
+          WebkitTapHighlightColor: 'transparent',
+          userSelect: 'none'
         }}
       >
         View Leaderboard

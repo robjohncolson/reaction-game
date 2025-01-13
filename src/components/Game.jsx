@@ -18,20 +18,31 @@ function Game() {
   const { player } = usePlayer()
   const [gameTimeout, setGameTimeout] = useState(null)
 
-  const startNewGame = () => {
+  const startNewGame = (e) => {
+    // Prevent event bubbling
+    if (e) {
+      e.stopPropagation()
+      e.preventDefault()
+    }
+
     if (socket?.connected) {
-      // Clear any existing timeout
-      if (gameStartTimeout) {
-        clearTimeout(gameStartTimeout)
-      }
+      console.log('Starting new game...')
       socket.emit('start_game', { roomId })
     }
+  }
+
+  const goToLeaderboard = (e) => {
+    // Prevent event bubbling
+    if (e) {
+      e.stopPropagation()
+      e.preventDefault()
+    }
+    navigate('/leaderboard')
   }
 
   useEffect(() => {
     let mounted = true
     let socketInstance = null
-    let gameStartTimeout = null
 
     const initSocket = () => {
       if (socketInstance) return
@@ -53,31 +64,11 @@ function Game() {
             roomId,
             username: player.username
           })
-
-          // Start first game automatically
-          gameStartTimeout = setTimeout(() => {
-            socketInstance.emit('start_game', { roomId })
-          }, 3000)
         }
       })
 
-      socketInstance.on('connect_error', (error) => {
-        console.error('Socket connection error:', error)
-      })
-
-      socketInstance.on('disconnect', (reason) => {
-        console.log('Socket disconnected:', reason)
-      })
-
-      socketInstance.on('player_joined', ({ playerCount: count }) => {
-        setPlayerCount(count)
-      })
-
-      socketInstance.on('player_left', ({ playerCount: count }) => {
-        setPlayerCount(count)
-      })
-
       socketInstance.on('game_starting', () => {
+        console.log('Game starting...')
         setGameState('ready')
         setBackgroundColor('red')
         setReactionTime(null)
@@ -85,12 +76,14 @@ function Game() {
       })
 
       socketInstance.on('turn_green', () => {
+        console.log('Turning green...')
         setBackgroundColor('green')
         setStartTime(Date.now())
         setGameState('started')
       })
 
       socketInstance.on('game_results', ({ scores }) => {
+        console.log('Received game results')
         const sortedScores = scores
           .sort((a, b) => a.score - b.score)
           .map((score, index) => ({
@@ -99,6 +92,7 @@ function Game() {
           }))
         setResults(sortedScores)
         setGameState('waiting')
+        setBackgroundColor('red')
       })
     }
 
@@ -109,9 +103,6 @@ function Game() {
       if (socketInstance) {
         socketInstance.removeAllListeners()
         socketInstance.disconnect()
-      }
-      if (gameStartTimeout) {
-        clearTimeout(gameStartTimeout)
       }
     }
   }, [roomId, player.username])
@@ -222,7 +213,7 @@ function Game() {
         cursor: 'pointer',
         WebkitTapHighlightColor: 'transparent',
         userSelect: 'none',
-        touchAction: 'none' // Prevent default touch actions
+        touchAction: 'none'
       }}
       onClick={handleClick}
       onTouchStart={handleTouchStart}
@@ -241,10 +232,8 @@ function Game() {
 
       {gameState === 'waiting' && (
         <button
-          onClick={(e) => {
-            e.stopPropagation()
-            startNewGame()
-          }}
+          onClick={startNewGame}
+          onTouchStart={startNewGame}
           style={{
             padding: '10px 20px',
             backgroundColor: 'white',
@@ -252,7 +241,8 @@ function Game() {
             borderRadius: '4px',
             cursor: 'pointer',
             marginTop: '20px',
-            zIndex: 10
+            zIndex: 10,
+            touchAction: 'manipulation'
           }}
         >
           Start Now
@@ -286,10 +276,8 @@ function Game() {
       )}
 
       <button 
-        onClick={(e) => {
-          e.stopPropagation()
-          navigate('/leaderboard')
-        }}
+        onClick={goToLeaderboard}
+        onTouchStart={goToLeaderboard}
         style={{
           position: 'absolute',
           top: '20px',
@@ -299,7 +287,8 @@ function Game() {
           border: 'none',
           borderRadius: '4px',
           cursor: 'pointer',
-          zIndex: 10
+          zIndex: 10,
+          touchAction: 'manipulation'
         }}
       >
         View Leaderboard
@@ -308,4 +297,5 @@ function Game() {
   )
 }
 
+export default Game 
 export default Game 

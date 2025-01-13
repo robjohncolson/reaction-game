@@ -156,10 +156,12 @@ function Game() {
   }
 
   const handleTouchStart = (e) => {
+    // Stop event propagation to prevent double handling
+    e.stopPropagation()
     e.preventDefault()
-    if (gameState === 'started') {
-      handleClick()
-    } else if (gameState === 'waiting') {
+    
+    // Only handle touch if we're in a valid state
+    if (gameState === 'waiting' || gameState === 'started') {
       handleClick()
     }
   }
@@ -174,34 +176,37 @@ function Game() {
         justifyContent: 'center',
         alignItems: 'center',
         cursor: 'pointer',
-        // Disable touch highlighting
         WebkitTapHighlightColor: 'transparent',
-        // Prevent text selection
-        userSelect: 'none'
+        userSelect: 'none',
+        touchAction: 'none' // Prevent default touch actions
       }}
       onClick={handleClick}
       onTouchStart={handleTouchStart}
-      // Prevent default touch behaviors
       onTouchMove={(e) => e.preventDefault()}
+      onTouchEnd={(e) => e.preventDefault()}
     >
       <div style={{ position: 'absolute', top: '20px', left: '20px', color: 'white' }}>
         Players in room: {playerCount}
       </div>
 
-      <h1 style={{ color: 'white' }}>
+      <h1 style={{ color: 'white', pointerEvents: 'none' }}>
         {gameState === 'waiting' && 'Click to start'}
         {gameState === 'ready' && 'Wait for green...'}
         {gameState === 'started' && 'Click!'}
       </h1>
 
       {reactionTime && (
-        <h2 style={{ color: 'white' }}>
+        <h2 style={{ color: 'white', pointerEvents: 'none' }}>
           Your reaction time: {reactionTime}ms
         </h2>
       )}
 
       {results && (
-        <div style={{ color: 'white', marginTop: '20px' }}>
+        <div style={{ 
+          color: 'white', 
+          marginTop: '20px',
+          pointerEvents: 'none'
+        }}>
           <h3>Results:</h3>
           {results.map((result, index) => (
             <div key={index} style={{ 
@@ -229,7 +234,8 @@ function Game() {
           backgroundColor: 'white',
           border: 'none',
           borderRadius: '4px',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          zIndex: 10 // Ensure button is above other elements
         }}
       >
         View Leaderboard

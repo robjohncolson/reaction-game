@@ -21,6 +21,7 @@ function Game() {
   useEffect(() => {
     let mounted = true
     let socketInstance = null
+    let gameStartTimeout = null
 
     const initSocket = () => {
       if (socketInstance) return
@@ -42,6 +43,11 @@ function Game() {
             roomId,
             username: player.username
           })
+
+          // Automatically start new game after 3 seconds
+          gameStartTimeout = setTimeout(() => {
+            socketInstance.emit('start_game', { roomId })
+          }, 3000)
         }
       })
 
@@ -93,6 +99,11 @@ function Game() {
             rank: index + 1
           }))
         setResults(sortedScores)
+
+        // Automatically start new game after showing results
+        gameStartTimeout = setTimeout(() => {
+          socketInstance.emit('start_game', { roomId })
+        }, 3000)
       })
     }
 
@@ -103,9 +114,9 @@ function Game() {
       if (socketInstance) {
         socketInstance.removeAllListeners()
         socketInstance.disconnect()
-        console.log('Cleaning up socket:', socketInstance.id)
-        socketInstance = null
-        setSocket(null)
+      }
+      if (gameStartTimeout) {
+        clearTimeout(gameStartTimeout)
       }
     }
   }, [roomId, player.username])
@@ -133,22 +144,11 @@ function Game() {
       const clickTime = Date.now()
       const reaction = clickTime - startTime
 
-      console.log({
-        clickTime,
-        startTime,
-        reaction,
-        device: /mobile/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop'
-      })
-
+      // Validate reaction time without alerts
       if (reaction < 150 || reaction > 1000) {
         console.warn('Invalid reaction time:', reaction)
         setGameState('waiting')
         setBackgroundColor('red')
-        if (reaction < 150) {
-          alert('Too fast! Are you trying to cheat? 😉')
-        } else {
-          alert('Too slow! Try to click as soon as you see green.')
-        }
         return
       }
 
@@ -201,8 +201,6 @@ function Game() {
       } catch (error) {
         console.error('Error saving score:', error)
       }
-    } else if (gameState === 'waiting') {
-      socket.emit('start_game', { roomId })
     }
   }
 
@@ -241,7 +239,7 @@ function Game() {
       </div>
 
       <h1 style={{ color: 'white', pointerEvents: 'none' }}>
-        {gameState === 'waiting' && 'Click to start'}
+        {gameState === 'waiting' && 'Get Ready...'}
         {gameState === 'ready' && 'Wait for green...'}
         {gameState === 'started' && 'Click!'}
       </h1>
